@@ -36,7 +36,7 @@ loss_inp_distr = nn.BCELoss()
 def main():
     image_size = (256, 256)
     device = 'cuda'
-    batch = 2
+    batch = 1
     downscale = 2
 
     torch.cuda.empty_cache()
@@ -45,6 +45,11 @@ def main():
     for file in os.listdir('D:\DataSets\Downscaled_HR'):
         if file.endswith('.png'):
             os.remove('D:\DataSets\Downscaled_HR\\'+str(file))
+
+    # Delete old generated images in Folder
+    for file in os.listdir('D:\DataSets\Cycle_outputs'):
+        if file.endswith('.png'):
+            os.remove('D:\DataSets\Cycle_outputs\\'+str(file))
 
             # Load HR and LR Images
     lr_source_batch, lr_data = Dataloaders.LR_Source_Dataloader(image_size, device, batch)
@@ -95,10 +100,10 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
 
 
     for e in range(e_cnt):
-        print("start"+str(e))
+        print("start Epoch"+str(e))
         #(lr_d, dowscaled_d)
         for i, data in enumerate(zip(lr_dataloader, dowscaled_hr_dataloader), 0):
-            print("Number of iterations: " + str(0))
+            print("Number of iterations: " + str(i))
             print(data[0].shape)
             # real input
             f_real_input = data[0].to(device)
@@ -192,7 +197,14 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             loss_noise_disc = (loss_noise_disc_fake + loss_noise_disc_real) * 0.5
             loss_noise_disc.backward()
             optimizer_disc.step()
+
+            if i == 0:
+                path = 'D:\DataSets\Cycle_outputs\\'
+                save_image(f_generated, path+'f_gen'+str(e)+'.png')
+                save_image(g_generated, path + 'g_gen' + str(e) + '.png')
             print("done")
+
+
 
         print("Epoch "+str(e)+" finished")
 
