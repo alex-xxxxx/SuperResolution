@@ -16,6 +16,7 @@ import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pylab as plt
 import numpy as np
+import  GPUtil
 
 
 
@@ -81,14 +82,13 @@ def main():
 def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise, e_cnt, lr_dataloader, dowscaled_hr_dataloader, device):
     torch.cuda.empty_cache()
 
-    #Criterion_GAN = cycle_models.GANLoss()
     Criterion_GAN = nn.MSELoss().to(device)
     Criterion_Cycle = nn.L1Loss().to(device)
     Criterion_Identity = nn.L1Loss().to(device)
     Loss_G_GEN = []
     Loss_F_GEN = []
-    Loss_D_bicubic_real = []
-    Loss_D_bicubic_fake = []
+    #Loss_D_bicubic_real = []
+    #Loss_D_bicubic_fake = []
     Loss_D_bicubic = []
     Loss_D_noise = []
 
@@ -154,7 +154,7 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             f_2ndcycle_generated = F_GEN_bicubic_domain(g_2ndcycle_generated)
             # calc loss between input bicubic downsampled image and generated downsampled'' img
             loss_F_2ndcycle_gen = Criterion_Cycle(f_2ndcycle_generated, g_real_input)*LAMBDA
-
+            GPUtil.showUtilization()
             # identity loss
             identity_gen_G = G_GEN_noise_domain(f_real_input)
             loss_identity_G = Criterion_Identity(identity_gen_G, f_real_input) * LAMBDA * LAMBDA_IDENTITY
@@ -172,16 +172,16 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             # disc for real bicubic imgs
             bicubic_disc_real_prediction = Z_DISC_bicubic(g_real_input)
             loss_bicubic_disc_real = Criterion_GAN(bicubic_disc_real_prediction, torch.ones_like(bicubic_disc_real_prediction))
-            Loss_D_bicubic_real.append(bicubic_disc_real_prediction.data.mean())
 
             # disc for fake bicubic imgs
             bicubic_disc_fake_prediction = Z_DISC_bicubic(f_generated.detach())
             loss_bicubic_disc_fake = Criterion_GAN(bicubic_disc_fake_prediction, torch.zeros_like(bicubic_disc_fake_prediction))
 
             # disc bicubic loss
-            loss_bicubic_disc = (loss_bicubic_disc_fake+ loss_bicubic_disc_real) * 0.5
+            loss_bicubic_disc = (loss_bicubic_disc_fake + loss_bicubic_disc_real) * 0.5
             loss_bicubic_disc.backward()
             optimizer_disc.step()
+            Loss_D_bicubic.append(loss_bicubic_disc)
 
             # *** Discriminator for noise images ***
             optimizer_disc.zero_grad()
@@ -197,6 +197,7 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             loss_noise_disc = (loss_noise_disc_fake + loss_noise_disc_real) * 0.5
             loss_noise_disc.backward()
             optimizer_disc.step()
+            Loss_D_noise.append(loss_noise_disc)
 
             if i == 0:
                 path = 'D:\DataSets\Cycle_outputs\\'

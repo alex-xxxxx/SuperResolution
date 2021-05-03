@@ -90,18 +90,6 @@ class Cycle_Discriminator(nn.Module):
         return  self.disc(input)
 
 
-class GANLoss(nn.Module):
-
-    def __inint__(self, gan_mode = 'lsgan', target_real_label = 1.0, target_fake_label = 0.0):
-
-        super(GANLoss, self).__init__()
-        self.register_buffer('real_label', torch.tensor(target_real_label))
-        self.register_buffer('fake_label', torch.tensor(target_fake_label))
-        self.gan_mode = gan_mode
-        if gan_mode == 'lsgan':
-            self.loss = nn.MSELoss()
-        else:
-            raise NotImplementedError('ganmode not supported')
 
 def init_weights(network, m):
     gain = 0.02
