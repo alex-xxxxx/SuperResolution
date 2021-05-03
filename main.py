@@ -32,36 +32,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Losses
 loss_inp_distr = nn.BCELoss()
 
-def loss_disc_cycle_input_distr(real, generated):
-    real_loss = loss_inp_distr(torch.ones_like(generated), generated)
-
-    generated_loss = loss_inp_distr(torch.zeros_like(generated), generated)
-
-    total_disc_loss = real_loss + generated_loss
-
-    return total_disc_loss * 0.5       # also try with 1
-
-def loss_gen_cycle_input_distr(generated):
-
-    return loss_inp_distr(torch.ones_like(generated), generated)
-
-def loss_cycle_consistency(real, cycle, with_lambda):
-
-    cycle_loss = torch.mean(torch.abs(real - cycle))
-
-    if with_lambda == 1:
-        return cycle_loss * LAMBDA
-    else:
-        return cycle_loss
-
-def loss_cycle_identity(real, same, with_lambda):
-
-    cycle_loss = torch.mean(torch.abs(real - same))
-
-    if with_lambda == 1:
-        return cycle_loss * LAMBDA * 0.5
-    else:
-        return cycle_loss * 0.5
 
 def main():
     image_size = (256, 256)
