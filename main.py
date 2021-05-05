@@ -35,9 +35,9 @@ loss_inp_distr = nn.BCELoss()
 
 
 def main():
-    image_size = (256, 256)
+    image_size = (128, 128)
     device = 'cuda'
-    batch = 1
+    batch = 2
     downscale = 2
 
     torch.cuda.empty_cache()
@@ -102,7 +102,7 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
     for e in range(e_cnt):
         print("start Epoch"+str(e))
         #(lr_d, dowscaled_d)
-        for i, data in enumerate(zip(lr_dataloader, dowscaled_hr_dataloader), 0):
+        for i, data in enumerate(zip(lr_dataloader, dowscaled_hr_dataloader)):
             print("Number of iterations: " + str(i))
             print(data[0].shape)
             # real input
@@ -136,11 +136,10 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
 
             # Summ loss of F (Downsample GAN)
             loss_F = loss_F_gen + loss_G_gen + loss_identity_F
-            loss_F.backward(retain_graph = True)
+            loss_F.backward(retain_graph = False)
 
             optimizer_generators.step()
             Loss_F_GEN.append(loss_F)
-
 
             # downsampled -> noise' -> downsampled''
             # downsampled -> noise'
@@ -161,10 +160,11 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
 
             # Sum loss of G (Noise GAN)
             loss_G = loss_G_2ndcycle_gen + loss_F_2ndcycle_gen + loss_identity_G
-            loss_G.backward(retain_graph = True)
+            loss_G.backward(retain_graph = False)
             optimizer_generators.step()
 
             Loss_G_GEN.append(loss_G)
+
 
             # Discriminators
             # *** Discriminator for bicubic downsampled images ***
@@ -199,10 +199,11 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             optimizer_disc.step()
             Loss_D_noise.append(loss_noise_disc)
 
-            if i == 0:
+            if i % 10 == 0:
                 path = 'D:\DataSets\Cycle_outputs\\'
                 save_image(f_generated, path+'f_gen'+str(e)+'.png')
-                save_image(g_generated, path + 'g_gen' + str(e) + '.png')
+                save_image(g_2ndcycle_generated, path + 'g2nd_gen' + str(e) + '.png')
+                save_image(f_2ndcycle_generated, path + 'f2nd_gen' + str(e) + '.png')
             print("done")
 
 

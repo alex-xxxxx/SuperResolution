@@ -42,14 +42,16 @@ class Cycle_Generator(nn.Module):
         # Last Layer, using Bilinear Upsampling
         #upsample1 = nn.Upsample(size=(4 * dim, 4 * dim),scale_factor=2, mode='bilinear', align_corners=True) # align Corners auch Ausschaltbar
         #upsample2 = nn.Upsample(size=(2 * dim, 2 * dim), scale_factor=2, mode='bilinear', align_corners=True)
-        upsample1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        #upsample1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        #upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        upsample1 = nn.ConvTranspose2d(4*dim, 8*dim, 3, 1, 1)
+        upsample2 = nn.ConvTranspose2d(2*dim, 4*dim, 3, 1, 1) #nn.PixelShuffle(2)
         first_upsampling = upsample1
         second_upsampling = upsample2
-        layer.extend([first_upsampling, nn.InstanceNorm2d(2*dim), nn.ReLU(True),
-                      second_upsampling, nn.InstanceNorm2d(dim), nn.ReLU(),
+        layer.extend([first_upsampling, nn.PixelShuffle(2), nn.InstanceNorm2d(2*dim), nn.ReLU(True),
+                      second_upsampling, nn.PixelShuffle(2), nn.InstanceNorm2d(dim), nn.ReLU(True),
                       nn.ReflectionPad2d(3),
-                      nn.Conv2d(dim*4, 3, 7, 1, 0),
+                      nn.Conv2d(dim, 3, 7, 1, 0),
                       ])    # Linear activation (no activation) used
 
         self.gen = nn.Sequential(*layer)

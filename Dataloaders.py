@@ -44,7 +44,7 @@ def LR_Source_Dataloader(image_size, device, batch):
 
     print(len(source_dataset))
     # batch size cnt pics
-    source_dataloader = torch.utils.data.DataLoader(source_dataset,batch_size=batch, shuffle=True, num_workers=4)
+    source_dataloader = torch.utils.data.DataLoader(source_dataset,batch_size=batch, shuffle=True, num_workers=1)
     print(len(source_dataloader))
     real_batch = next(iter(source_dataloader))
     print(real_batch[::].shape)
@@ -70,7 +70,7 @@ def HR_Source_Dataloader(image_size, device, batch):
 
     print(len(source_dataset))
     # batch size cnt pics
-    source_dataloader = torch.utils.data.DataLoader(source_dataset, batch_size=batch, shuffle=True, num_workers=4)
+    source_dataloader = torch.utils.data.DataLoader(source_dataset, batch_size=batch, shuffle=True, num_workers=1)
     print(len(source_dataloader))
     real_batch = next(iter(source_dataloader))
     print(real_batch[::].shape)
@@ -88,7 +88,7 @@ def Downscaled_DataLoader(device, batch):
 
     path_to_source_data = 'D:\DataSets\Downscaled_HR'
     source_dataset = CustomDataSet(path_to_source_data, transform=transform)
-    source_dataloader = torch.utils.data.DataLoader(source_dataset, batch_size=batch, shuffle=False, num_workers=4)
+    source_dataloader = torch.utils.data.DataLoader(source_dataset, batch_size=batch, shuffle=False, num_workers=1)
     print(len(source_dataloader))
     real_batch = next(iter(source_dataloader))
     print(real_batch[::].shape)
