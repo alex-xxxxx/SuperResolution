@@ -98,12 +98,12 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
     optimizer_generators = torch.optim.Adam(itertools.chain(F_GEN_bicubic_domain.parameters(), G_GEN_noise_domain.parameters()), lr=START_LEARNING_RATE, betas=(ADAM_BETA, 0.999))
     optimizer_disc = torch.optim.Adam(itertools.chain(Z_DISC_bicubic.parameters(), X_DISC_noise.parameters()), lr= START_LEARNING_RATE, betas=(ADAM_BETA, 0.999))
 
-
+    cnt = 0
     for e in range(e_cnt):
         print("start Epoch"+str(e))
         #(lr_d, dowscaled_d)
         for i, data in enumerate(zip(lr_dataloader, dowscaled_hr_dataloader)):
-            print("Number of iterations: " + str(i))
+
             print(data[0].shape)
             # real input
             f_real_input = data[0].to(device)
@@ -199,12 +199,14 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             optimizer_disc.step()
             Loss_D_noise.append(loss_noise_disc)
 
-            if i % 10 == 0:
+            if cnt % 5 == 0:
                 path = 'D:\DataSets\Cycle_outputs\\'
                 save_image(f_generated, path+'f_gen'+str(e)+'.png')
                 save_image(g_2ndcycle_generated, path + 'g2nd_gen' + str(e) + '.png')
                 save_image(f_2ndcycle_generated, path + 'f2nd_gen' + str(e) + '.png')
+            cnt += 1
             print("done")
+
 
 
 
