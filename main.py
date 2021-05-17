@@ -22,7 +22,7 @@ import  GPUtil
 
 LAMBDA = 10
 LAMBDA_IDENTITY = 0.5
-EPOCHS = 200
+EPOCHS = 250
 ADAM_BETA = 0.5
 START_LEARNING_RATE = 0.0002
 
@@ -37,7 +37,7 @@ loss_inp_distr = nn.BCELoss()
 def main():
     image_size = (128, 128)
     device = 'cuda'
-    batch = 2
+    batch = 4
     downscale = 2
 
     torch.cuda.empty_cache()
@@ -57,14 +57,14 @@ def main():
     hr_source_batch, hr_data = Dataloaders.HR_Source_Dataloader(image_size, device, batch)
 
     # Create LR Image from HR Image
-    transform_to_lowres = transforms.Resize((image_size[0] // downscale, image_size[0] // downscale),
-                      interpolation=transforms.InterpolationMode.BICUBIC)
-    downscaled_hr_batch = transform_to_lowres(hr_source_batch)
+    #transform_to_lowres = transforms.Resize((image_size[0] // downscale, image_size[0] // downscale),
+    #                  interpolation=transforms.InterpolationMode.BICUBIC)
+    #downscaled_hr_batch = transform_to_lowres(hr_source_batch)
     # save them in folder to be able to load with DataLoader
-    for i in range(len(downscaled_hr_batch)):
-        save_image(downscaled_hr_batch[i],"D:\DataSets\Downscaled_HR\lr"+str(i)+".png")
+    #for i in range(len(downscaled_hr_batch)):
+    #    save_image(downscaled_hr_batch[i],"D:\DataSets\DPEDiphone-tr-y-downsampled\lr"+str(i)+".png")
     # load downscaled images
-    downscaled_data = Dataloaders.Downscaled_DataLoader(device, batch)
+    downscaled_data, down_data = Dataloaders.Downscaled_DataLoader(image_size, device, batch)
 
 
 
@@ -75,7 +75,7 @@ def main():
     Z_DISC_bicubic = cycle_models.Cycle_Discriminator().to(device)
     X_DISC_noise = cycle_models.Cycle_Discriminator().to(device)
 
-    train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise, EPOCHS, lr_data, downscaled_data, device)
+    train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise, EPOCHS, lr_data, down_data, device)
 
 
 
@@ -105,6 +105,7 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
         for i, data in enumerate(zip(lr_dataloader, dowscaled_hr_dataloader)):
 
             print(data[0].shape)
+            print(data[1].shape)
             # real input
             f_real_input = data[0].to(device)
             g_real_input = data[1].to(device)
@@ -132,7 +133,7 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
 
             # identity loss
             identity_gen_F = F_GEN_bicubic_domain(g_real_input)
-            loss_identity_F = Criterion_Identity(identity_gen_F, g_real_input) * LAMBDA
+            loss_identity_F = Criterion_Identity(identity_gen_F, g_real_input) * LAMBDA * LAMBDA_IDENTITY
 
             # Summ loss of F (Downsample GAN)
             loss_F = loss_F_gen + loss_G_gen + loss_identity_F
@@ -199,14 +200,15 @@ def train(G_GEN_noise_domain, F_GEN_bicubic_domain, Z_DISC_bicubic, X_DISC_noise
             optimizer_disc.step()
             Loss_D_noise.append(loss_noise_disc)
 
-            if cnt % 5 == 0:
+            if cnt % 5 == 0 or cnt > 190:
                 path = 'D:\DataSets\Cycle_outputs\\'
+                save_image(g_generated, path + 'g_gen' + str(e) + '.png')
                 save_image(f_generated, path+'f_gen'+str(e)+'.png')
                 save_image(g_2ndcycle_generated, path + 'g2nd_gen' + str(e) + '.png')
                 save_image(f_2ndcycle_generated, path + 'f2nd_gen' + str(e) + '.png')
-            cnt += 1
-            print("done")
 
+            print("done")
+        cnt += 1
 
 
 

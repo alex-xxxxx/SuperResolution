@@ -42,16 +42,23 @@ class Cycle_Generator(nn.Module):
         # Last Layer, using Bilinear Upsampling
         #upsample1 = nn.Upsample(size=(4 * dim, 4 * dim),scale_factor=2, mode='bilinear', align_corners=True) # align Corners auch Ausschaltbar
         #upsample2 = nn.Upsample(size=(2 * dim, 2 * dim), scale_factor=2, mode='bilinear', align_corners=True)
-        #upsample1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        #upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        upsample1 = nn.ConvTranspose2d(4*dim, 8*dim, 3, 1, 1)
-        upsample2 = nn.ConvTranspose2d(2*dim, 4*dim, 3, 1, 1) #nn.PixelShuffle(2)
+        #upsample1 = nn.Upsample(scale_factor=4, mode='nearest', align_corners=None)
+        #upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        #upsample1 = nn.ConvTranspose2d(4*dim, 8*dim, 3, 1, 1)
+        #upsample2 = nn.ConvTranspose2d(2*dim, 4*dim, 3, 1, 1) #nn.PixelShuffle(2)
+        upsample1 = nn.Conv2d(4*dim, 8*dim, 3, 1, 1)
+        upsample2 = nn.Conv2d(2*dim, 4*dim, 3, 1, 1)
         first_upsampling = upsample1
         second_upsampling = upsample2
-        layer.extend([first_upsampling, nn.PixelShuffle(2), nn.InstanceNorm2d(2*dim), nn.ReLU(True),
+        layer.extend([first_upsampling,  nn.PixelShuffle(2), nn.InstanceNorm2d(2*dim), nn.ReLU(True),
+                      #nn.ReflectionPad2d(1),
+                      #nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
                       second_upsampling, nn.PixelShuffle(2), nn.InstanceNorm2d(dim), nn.ReLU(True),
+                      #nn.ReflectionPad2d(1),
+                      #nn.Conv2d(dim*4, dim*2, kernel_size=3, stride=1, padding=0), #nn.InstanceNorm2d(dim), nn.ReLU(True),
                       nn.ReflectionPad2d(3),
-                      nn.Conv2d(dim, 3, 7, 1, 0),
+                      nn.Conv2d(dim, 3, kernel_size=7, stride=1, padding=0),
+                      nn.Tanh(),
                       ])    # Linear activation (no activation) used
 
         self.gen = nn.Sequential(*layer)
@@ -68,23 +75,23 @@ class Cycle_Discriminator(nn.Module):
         super(Cycle_Discriminator, self).__init__()
 
         self.disc = nn.Sequential(
-            nn.Conv2d(input_nc, ndf, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(input_nc, ndf, kernel_size=4, stride=2, padding=1, bias=False),
             nn.LeakyReLU(negative_slope=0.2, inplace=True),
 
             # 3 Layers
-            nn.Conv2d(ndf, ndf * 2, kernel_size=4,stride=2,padding=1, bias=True),
+            nn.Conv2d(ndf, ndf * 2, kernel_size=4,stride=2,padding=1, bias=False),
             nn.InstanceNorm2d(ndf *2),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 2, ndf * 4, kernel_size=4, stride=2, padding=1, bias=True),
+            nn.Conv2d(ndf * 2, ndf * 4, kernel_size=4, stride=2, padding=1, bias=False),
             nn.InstanceNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 4, ndf * 8, kernel_size=4, stride=2, padding=1, bias=True),
+            nn.Conv2d(ndf * 4, ndf * 8, kernel_size=4, stride=1, padding=1),
             nn.InstanceNorm2d(ndf * 8),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 8, 1, kernel_size=4, stride=2, padding=1)
+            nn.Conv2d(ndf * 8, 1, kernel_size=4, stride=1, padding=1)
         )
 
     def forward(self, input):
